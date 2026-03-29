@@ -1,0 +1,511 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+\geometry{margin=1in}
+\setlength{\headheight}{15pt}
+
+% Code listing style
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}
+\definecolor{codegreen}{rgb}{0,0.5,0}
+\definecolor{codegray}{rgb}{0.4,0.4,0.4}
+\definecolor{codepurple}{rgb}{0.5,0,0.5}
+\definecolor{codeblue}{rgb}{0,0,0.7}
+
+\lstdefinestyle{cstyle}{
+    backgroundcolor=\color{codebg},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codeblue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=8pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=4,
+    frame=single,
+    rulecolor=\color{black!30},
+    language=C
+}
+
+\lstset{style=cstyle}
+
+% Header / footer
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{ICSP Problem Set}
+\lhead{Image Convolution, Rotation \& Cropping}
+\cfoot{\thepage}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+% ------------------------------------------------------------------
+\begin{document}
+
+% Title
+\begin{center}
+    {\LARGE \textbf{ICSP Problem Set}}\\[0.4em]
+    {\large Image Convolution, Rotation, and Cropping}\\[1.2em]
+\end{center}
+
+% Drive link — prominently at the top
+\begin{center}
+    \fbox{%
+        \parbox{0.85\linewidth}{%
+            \centering
+            \textbf{Drive link to code files for each problem}\\[0.4em]
+            \url{https://drive.google.com/drive/folders/1oU7uNtzw4zDzvH8hW310cTP0fcf66ybJ?usp=sharing}
+        }%
+    }
+\end{center}
+
+\bigskip
+\tableofcontents
+\newpage
+
+% ==================================================================
+\section{Problem 2-1 — Socialize with Other Pixels \textnormal{[40 points]}}
+
+\subsection*{Background}
+Convolution is a fundamental image-processing operation.
+A kernel (also called a \emph{filter}) is a small 2-D matrix that is slid over
+every pixel of a source image; at each position the kernel values are
+multiplied element-wise with the covered pixels and the results are summed to
+produce one output pixel.
+The original codebase provides a working implementation for a
+\(3\times 3\) kernel.
+
+% ------------------------------------------------------------------
+\subsection{Part (a) — \texorpdfstring{5\,×\,5}{5x5} Kernel \textnormal{[20 points]}}
+
+\subsubsection*{What was changed}
+The loop bounds and the half-width constant were updated from a hard-coded
+\texttt{3} to a hard-coded \texttt{5}, and the kernel array was extended to
+\(5\times 5\).
+
+Concretely, three things were modified:
+
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{Kernel size constant.}
+          \texttt{\#define KERNEL\_SIZE 3} was replaced with
+          \texttt{\#define KERNEL\_SIZE 5}.
+    \item \textbf{Kernel array.}
+          The kernel is now a \(5\times 5\) array initialised (for example)
+          with a normalised box-blur:
+          \[
+              K = \frac{1}{25}\begin{pmatrix}
+                  1 & 1 & 1 & 1 & 1 \\
+                  1 & 1 & 1 & 1 & 1 \\
+                  1 & 1 & 1 & 1 & 1 \\
+                  1 & 1 & 1 & 1 & 1 \\
+                  1 & 1 & 1 & 1 & 1
+              \end{pmatrix}
+          \]
+    \item \textbf{Half-width.}
+          The variable (or expression) that defines how many pixels around the
+          centre the kernel reaches changed from \(1\) to \(2\), i.e.\
+          \texttt{half = KERNEL\_SIZE / 2}.
+\end{enumerate}
+
+\subsubsection*{Code snippet — key changes}
+
+\begin{lstlisting}
+/* --- 3x3 original (before) --- */
+#define KERNEL_SIZE 3
+float kernel[3][3] = { {1/9.0f, 1/9.0f, 1/9.0f},
+                        {1/9.0f, 1/9.0f, 1/9.0f},
+                        {1/9.0f, 1/9.0f, 1/9.0f} };
+int half = 1;  /* KERNEL_SIZE / 2 */
+
+/* --- 5x5 modified (after) --- */
+#define KERNEL_SIZE 5
+float kernel[5][5] = {
+    {1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f},
+    {1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f},
+    {1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f},
+    {1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f},
+    {1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f, 1/25.0f}
+};
+int half = 2;  /* KERNEL_SIZE / 2 */
+\end{lstlisting}
+
+The convolution loop itself required \emph{no} structural change because it
+already used \texttt{half} as its bounds:
+
+\begin{lstlisting}
+for (int ky = -half; ky <= half; ky++) {
+    for (int kx = -half; kx <= half; kx++) {
+        /* accumulate kernel[ky+half][kx+half] * pixel(x+kx, y+ky) */
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Edge handling}
+Pixels within \texttt{half} pixels of the image border are handled by
+\emph{clamping}: out-of-bounds accesses are mapped to the nearest valid pixel
+coordinate, so the output image retains the same dimensions as the input.
+
+% ------------------------------------------------------------------
+\subsection{Part (b) — Arbitrary Odd Kernel Size \textnormal{[20 points]}}
+
+\subsubsection*{What was changed}
+The fixed \texttt{\#define} was removed and the kernel size is now accepted as a
+run-time parameter (function argument or user input). Two validations are
+enforced before any processing begins:
+
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{Odd check.} If the supplied \(n\) is even the program prints an
+          error and aborts (or returns an error code).
+    \item \textbf{Minimum-size check.} \(n\) must satisfy \(n > 1\); a value of
+          \(1\) (identity) or \(0\) is rejected.
+\end{enumerate}
+
+\subsubsection*{Code snippet}
+
+\begin{lstlisting}
+void convolve(Image *src, Image *dst, float *kernel, int n) {
+    /* Validate kernel size */
+    if (n % 2 == 0) {
+        fprintf(stderr,
+            "Error: kernel size must be odd, but got n = %d.\n", n);
+        exit(EXIT_FAILURE);
+    }
+    if (n <= 1) {
+        fprintf(stderr,
+            "Error: kernel size must be greater than 1, but got n = %d.\n",
+            n);
+        exit(EXIT_FAILURE);
+    }
+
+    int half = n / 2;
+
+    for (int y = 0; y < src->height; y++) {
+        for (int x = 0; x < src->width; x++) {
+            float acc = 0.0f;
+            for (int ky = -half; ky <= half; ky++) {
+                for (int kx = -half; kx <= half; kx++) {
+                    int sx = clamp(x + kx, 0, src->width  - 1);
+                    int sy = clamp(y + ky, 0, src->height - 1);
+                    int ki = (ky + half) * n + (kx + half);
+                    acc += kernel[ki] * get_pixel(src, sx, sy);
+                }
+            }
+            set_pixel(dst, x, y, (unsigned char)clamp_f(acc, 0, 255));
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Why only odd sizes?}
+An odd kernel size guarantees that the kernel has a well-defined
+\emph{centre} pixel at position \(\bigl(\lfloor n/2\rfloor,\,
+\lfloor n/2\rfloor\bigr)\).
+For an even-sized kernel no such integer centre exists, which would require
+sub-pixel alignment and is therefore rejected.
+
+\newpage
+
+% ==================================================================
+\section{Problem 2-2 — Take a Left to Go Right \textnormal{[20 points]}}
+
+\subsection*{Background}
+Rotating a rectangular image by $90^\circ$ swaps its width and height.
+Given an input image of size \(W \times H\) (width \(\times\) height), the
+output image has size \(H \times W\).
+
+% ------------------------------------------------------------------
+\subsection{Part (a) — Clockwise \texorpdfstring{$90^\circ$}{90 degrees} \textnormal{[10 points]}}
+
+\subsubsection*{Mathematical mapping}
+For a clockwise rotation by $90^\circ$ the pixel originally at column \(x\),
+row \(y\) (0-indexed, origin at top-left) maps to:
+\[
+    x' = (H - 1) - y, \qquad y' = x
+\]
+where \(H\) is the original image height.
+
+\subsubsection*{What was changed}
+A new function \texttt{rotate\_cw} was added.
+It allocates an output image of dimensions \(H \times W\) and iterates
+over every pixel of the input, writing it to the computed destination.
+
+\subsubsection*{Code snippet}
+
+\begin{lstlisting}
+Image *rotate_cw(const Image *src) {
+    /* Output dimensions are swapped */
+    Image *dst = create_image(src->height, src->width);
+
+    for (int y = 0; y < src->height; y++) {
+        for (int x = 0; x < src->width; x++) {
+            int dx = (src->height - 1) - y;  /* new column */
+            int dy = x;                       /* new row    */
+            set_pixel(dst, dx, dy, get_pixel(src, x, y));
+        }
+    }
+    return dst;
+}
+\end{lstlisting}
+
+\subsubsection*{Explanation}
+Imagine the image printed on paper and physically rotated clockwise.
+The top row of the input becomes the \emph{right-most column} of the output.
+Equivalently, the left-most column of the input becomes the \emph{top row} of
+the output.
+
+% ------------------------------------------------------------------
+\subsection{Part (b) — Counter-clockwise \texorpdfstring{$90^\circ$}{90 degrees} \textnormal{[10 points]}}
+
+\subsubsection*{Mathematical mapping}
+For a counter-clockwise rotation by $90^\circ$:
+\[
+    x' = y, \qquad y' = (W - 1) - x
+\]
+where \(W\) is the original image width.
+
+\subsubsection*{What was changed}
+A complementary function \texttt{rotate\_ccw} was added, mirroring the logic
+of \texttt{rotate\_cw} but with the axes transposed in the opposite direction.
+
+\subsubsection*{Code snippet}
+
+\begin{lstlisting}
+Image *rotate_ccw(const Image *src) {
+    /* Output dimensions are swapped */
+    Image *dst = create_image(src->height, src->width);
+
+    for (int y = 0; y < src->height; y++) {
+        for (int x = 0; x < src->width; x++) {
+            int dx = y;                      /* new column */
+            int dy = (src->width - 1) - x;  /* new row    */
+            set_pixel(dst, dx, dy, get_pixel(src, x, y));
+        }
+    }
+    return dst;
+}
+\end{lstlisting}
+
+\subsubsection*{Sanity check}
+Applying \texttt{rotate\_cw} followed by \texttt{rotate\_ccw} (or vice versa)
+on any image must yield the original image.
+This identity was used to verify correctness during development.
+
+\newpage
+
+% ==================================================================
+\section{Problem 2-3 — Reshaping Reality \textnormal{[40 points]}}
+
+\subsection*{Background}
+This problem extends the codebase with two related operations:
+\begin{enumerate}
+    \item \textbf{Cropping}: extract a rectangular sub-region from an image.
+    \item \textbf{Resizing / stretching}: scale the cropped region to a
+          user-specified display size using nearest-neighbour interpolation.
+\end{enumerate}
+
+% ------------------------------------------------------------------
+\subsection{Part (a) — Cropping \textnormal{[15 points]}}
+
+\subsubsection*{Inputs}
+\begin{itemize}
+    \item Source image of size \(W \times H\).
+    \item Top-left corner \(P = (x_0,\, y_0)\).
+    \item Crop width \(w\) and height \(h\).
+\end{itemize}
+
+\subsubsection*{What was changed}
+A function \texttt{crop} was added.
+It validates all parameters (see Section~\ref{sec:safety}), then copies the
+rectangular block \([x_0,\, x_0+w) \times [y_0,\, y_0+h)\) from the source
+into a freshly allocated output image.
+
+\subsubsection*{Code snippet}
+
+\begin{lstlisting}
+Image *crop(const Image *src, int x0, int y0, int w, int h) {
+    /* --- safety checks --- */
+    if (x0 < 0 || y0 < 0) {
+        fprintf(stderr, "Error: crop origin (%d,%d) is out of bounds.\n",
+                x0, y0);
+        return NULL;
+    }
+    if (w <= 0 || h <= 0) {
+        fprintf(stderr, "Error: crop dimensions (%dx%d) must be positive.\n",
+                w, h);
+        return NULL;
+    }
+    if (x0 + w > src->width || y0 + h > src->height) {
+        fprintf(stderr,
+            "Error: crop region [%d..%d) x [%d..%d) exceeds image "
+            "bounds %dx%d.\n",
+            x0, x0 + w, y0, y0 + h, src->width, src->height);
+        return NULL;
+    }
+
+    Image *dst = create_image(w, h);
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            set_pixel(dst, x, y, get_pixel(src, x0 + x, y0 + y));
+        }
+    }
+    return dst;
+}
+\end{lstlisting}
+
+% ------------------------------------------------------------------
+\subsection{Part (b) — Stretch / Squeeze \textnormal{[15 points]}}
+
+\subsubsection*{Inputs}
+In addition to the cropping parameters, the caller supplies:
+\begin{itemize}
+    \item \texttt{displayW} — desired output width.
+    \item \texttt{displayH} — desired output height.
+\end{itemize}
+
+\subsubsection*{What was changed}
+A function \texttt{crop\_and\_resize} was added.
+It first calls \texttt{crop}, then maps each output pixel
+\((x',\, y')\) back to the cropped image using nearest-neighbour
+interpolation:
+\[
+    x_{\text{src}} = \left\lfloor x' \cdot \frac{w}{\texttt{displayW}} \right\rfloor,
+    \qquad
+    y_{\text{src}} = \left\lfloor y' \cdot \frac{h}{\texttt{displayH}} \right\rfloor
+\]
+
+\subsubsection*{Code snippet}
+
+\begin{lstlisting}
+Image *crop_and_resize(const Image *src,
+                       int x0, int y0, int w, int h,
+                       int displayW, int displayH) {
+    /* Validate display dimensions */
+    if (displayW <= 0 || displayH <= 0) {
+        fprintf(stderr,
+            "Error: display dimensions (%dx%d) must be positive.\n",
+            displayW, displayH);
+        return NULL;
+    }
+
+    Image *cropped = crop(src, x0, y0, w, h);
+    if (!cropped) return NULL;  /* propagate crop error */
+
+    Image *dst = create_image(displayW, displayH);
+
+    for (int dy = 0; dy < displayH; dy++) {
+        for (int dx = 0; dx < displayW; dx++) {
+            /* Nearest-neighbour mapping back into the cropped region */
+            int sx = (int)((double)dx * w / displayW);
+            int sy = (int)((double)dy * h / displayH);
+            /* Clamp to [0, w-1] x [0, h-1] for safety */
+            sx = sx < w ? sx : w - 1;
+            sy = sy < h ? sy : h - 1;
+            set_pixel(dst, dx, dy, get_pixel(cropped, sx, sy));
+        }
+    }
+
+    free_image(cropped);
+    return dst;
+}
+\end{lstlisting}
+
+% ------------------------------------------------------------------
+\subsection{Part (c) — Safety Checks and Edge Cases}
+\label{sec:safety}
+
+The following table summarises every guard implemented across
+\texttt{crop} and \texttt{crop\_and\_resize}.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Check} & \textbf{Condition tested} & \textbf{Action} \\
+    \midrule
+    Negative origin
+        & \(x_0 < 0\) or \(y_0 < 0\)
+        & Print error, return \texttt{NULL} \\
+    Non-positive crop size
+        & \(w \le 0\) or \(h \le 0\)
+        & Print error, return \texttt{NULL} \\
+    Crop exceeds image
+        & \(x_0 + w > W\) or \(y_0 + h > H\)
+        & Print error, return \texttt{NULL} \\
+    Non-positive display size
+        & \(\texttt{displayW} \le 0\) or \(\texttt{displayH} \le 0\)
+        & Print error, return \texttt{NULL} \\
+    Nearest-neighbour clamp
+        & Computed \(sx \ge w\) or \(sy \ge h\)
+        & Clamp to \(w-1\) / \(h-1\) \\
+    Null pointer propagation
+        & \texttt{crop} returns \texttt{NULL}
+        & \texttt{crop\_and\_resize} returns \texttt{NULL} \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+Additional edge cases noted:
+
+\begin{itemize}
+    \item \textbf{Point crop} (\(w = 1,\, h = 1\)): produces a
+          \(1 \times 1\) image — valid and handled correctly.
+    \item \textbf{Full-image crop} (\(x_0 = 0,\, y_0 = 0,\, w = W,\, h = H\)):
+          produces an exact copy — verified against the original.
+    \item \textbf{Identity resize} (\(\texttt{displayW} = w,\,
+          \texttt{displayH} = h\)): output equals the cropped image
+          pixel-for-pixel.
+    \item \textbf{Extreme up-scaling}: e.g.\ a \(1 \times 1\) crop stretched
+          to \(1920 \times 1080\) — every output pixel maps to the single source
+          pixel; clamping ensures no out-of-bounds access.
+    \item \textbf{Extreme down-scaling}: e.g.\ a large crop compressed to
+          \(1 \times 1\) — only the top-left pixel of the crop is retained.
+\end{itemize}
+
+% ==================================================================
+\section*{Summary of All Modifications}
+
+\begin{center}
+\begin{tabular}{@{}llp{7cm}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Function / change} & \textbf{Key modification} \\
+    \midrule
+    2-1(a) & \texttt{convolve} (5\,×\,5)
+            & Extended kernel array and \texttt{half} from 1 to 2. \\
+    2-1(b) & \texttt{convolve} (n\,×\,n)
+            & Kernel size becomes a parameter; even/small values rejected. \\
+    2-2(a) & \texttt{rotate\_cw}
+            & Pixel \((x,y)\) maps to \((H-1-y,\;x)\). \\
+    2-2(b) & \texttt{rotate\_ccw}
+            & Pixel \((x,y)\) maps to \((y,\;W-1-x)\). \\
+    2-3(a) & \texttt{crop}
+            & Copies rectangle \([x_0, x_0+w) \times [y_0, y_0+h)\). \\
+    2-3(b) & \texttt{crop\_and\_resize}
+            & Nearest-neighbour scale of crop to \(\texttt{displayW}\times\texttt{displayH}\). \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
