@@ -1,0 +1,90 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{enumitem}
+
+\title{ICSPSET Problem-wise Change Explainer}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Source Mapping}
+\begin{itemize}[leftmargin=1.2em]
+    \item \textbf{Problem statements}: \texttt{Instructions \& Problem Set}
+    \item \textbf{Code base}: \texttt{ics\_images.py}
+\end{itemize}
+
+\section*{Problem 2-1: Socialize with other pixels}
+\subsection*{(a) Upgrade 3\(\times\)3 convolution to 5\(\times\)5}
+\textbf{What changes are made:}
+\begin{itemize}[leftmargin=1.2em]
+    \item Extend convolution neighborhood logic from radius \(1\) to radius \(2\).
+    \item Replace fixed 3\(\times\)3 channel accumulation in \texttt{multiply(...)} with 5\(\times\)5 accumulation.
+\end{itemize}
+\textbf{Why:} The objective explicitly asks for a 5\(\times\)5 kernel implementation using the given codebase.\\
+\textbf{How this meets objective:} Each output pixel is computed from a 25-pixel neighborhood, so filtering behavior matches the required 5\(\times\)5 convolution.
+
+\subsection*{(b) Generalize to any odd \(n>1\)}
+\textbf{What changes are made:}
+\begin{itemize}[leftmargin=1.2em]
+    \item Parameterize kernel size as \(n\), with radius \(r=\lfloor n/2 \rfloor\).
+    \item Add input validation: reject even \(n\), and reject \(n \le 1\), with a clear error message.
+    \item Use loop-based accumulation over the \(n \times n\) kernel instead of hardcoded indices.
+\end{itemize}
+\textbf{Why:} The task requires scalability beyond 5\(\times\)5 while enforcing odd-sized kernels only.\\
+\textbf{How this meets objective:} Dynamic indexing computes valid odd-kernel convolutions for all \(n>1\), and invalid sizes fail fast with explicit errors.
+
+\section*{Problem 2-2: Take a left to go right}
+\subsection*{(a) Rotate clockwise by \(90^\circ\)}
+\textbf{What changes are made:}
+\begin{itemize}[leftmargin=1.2em]
+    \item Add a function that maps each input pixel \((i,j)\) to clockwise output coordinates.
+    \item Swap output dimensions from \((H,W)\) to \((W,H)\).
+\end{itemize}
+\textbf{Why:} A \(90^\circ\) rotation is a geometric transform, not a color transform; it must reindex pixels.\\
+\textbf{How this meets objective:} The output image orientation is rotated right exactly once with preserved pixel values.
+
+\subsection*{(b) Rotate counter-clockwise by \(90^\circ\)}
+\textbf{What changes are made:}
+\begin{itemize}[leftmargin=1.2em]
+    \item Add the inverse coordinate mapping for a left \(90^\circ\) rotation.
+    \item Keep the same output dimension swap logic.
+\end{itemize}
+\textbf{Why:} Counter-clockwise rotation is separately required and uses a different index transform.\\
+\textbf{How this meets objective:} The output image orientation is rotated left exactly once with no pixel loss.
+
+\section*{Problem 2-3: Reshaping reality (kind of)}
+\subsection*{(a) Crop using point \(P=(x,y)\), width \(w\), height \(h\)}
+\textbf{What changes are made:}
+\begin{itemize}[leftmargin=1.2em]
+    \item Add crop logic that extracts rows \(y \rightarrow y+h-1\) and columns \(x \rightarrow x+w-1\).
+    \item Return a new image region with dimensions \(w \times h\).
+\end{itemize}
+\textbf{Why:} Cropping isolates a rectangular region defined by top-left anchor and size.\\
+\textbf{How this meets objective:} The generated image is exactly the requested spatial subset.
+
+\subsection*{(b) Stretch/squeeze to \texttt{displayW}, \texttt{displayH}}
+\textbf{What changes are made:}
+\begin{itemize}[leftmargin=1.2em]
+    \item Add resize logic that remaps cropped-region coordinates into requested display dimensions.
+    \item Use deterministic coordinate scaling so every destination pixel samples from valid source coordinates.
+\end{itemize}
+\textbf{Why:} The task requires changing display dimensions after cropping.\\
+\textbf{How this meets objective:} The cropped image is transformed from \((w,h)\) to \((displayW,displayH)\), implementing stretch (upscale) or squeeze (downscale).
+
+\subsection*{(c) Safety checks / edge cases}
+\textbf{Checks to implement and document:}
+\begin{itemize}[leftmargin=1.2em]
+    \item Kernel checks: \(n\) is odd and \(n>1\), and kernel dimensions match \(n\times n\).
+    \item Image bounds: reject crop start outside image; reject non-positive \(w,h\); prevent out-of-range crop extents.
+    \item Resize checks: reject non-positive \texttt{displayW}, \texttt{displayH}.
+    \item Type checks: ensure integer dimensions and indices where required.
+    \item Border handling consistency during convolution (copy pixel, pad, or other chosen policy) should be explicit and consistent.
+\end{itemize}
+\textbf{Why:} These validations prevent invalid indexing, runtime errors, and ambiguous outputs.\\
+\textbf{How this meets objective:} Robust input handling ensures output generation remains correct, predictable, and aligned with assignment constraints.
+
+\end{document}
