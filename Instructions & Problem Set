@@ -1,0 +1,20 @@
+Problem 2-1. Socialize with other pixels [40 points]
+(a) [20 points] Take the code for convolving with a 3 by 3 kernel and modify it to
+use a 5 by 5.
+(b) [20 points] Then, modify it to use any odd n > 1. Even numbers should be
+rejected with an error message.
+NOTE: You must use the given codebase for 5×5 for the following questions. Please
+provide the required code as per the question.
+Problem 2-2. Take a left to go right [20 points]
+Take an image - a rectangular one - and turn it:
+(a) [10 points] Clockwise by 90 degrees
+(b) [10 points] Counter-clockwise by 90 degrees
+Problem 2-3. Reshaping reality (kind of) [40 points]
+(a) [15 points] Take any image, a point P=(x, y), and two values w and h and
+produce a cropped image, where the top left corner is P, and which has width
+w and height h.
+(b) [15 points] Additionally, take two more values displayW and displayH and
+produce a stretched/squeezed image. That is, the cropped bit of the image of
+width w and heigh h, should now be stretched/squeezed into a new image of
+width displayW and height displayH.
+(c) [10 points] Take a note of all the safety checks/edge cases that you have implemented.
